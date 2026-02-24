@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Environment files (contain credentials)
+.env
+.env.local
+.env.*.local
+
+# Browser profiles (contain session cookies)
+profiles/
+
+# Keep profile directories but ignore contents
+!profiles/.gitkeep
+
+# Debug artifacts
+*.log
+screenshots/
+
+# OS files
+.DS_Store
+Thumbs.db

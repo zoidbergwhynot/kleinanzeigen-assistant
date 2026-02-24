@@ -1,0 +1,19 @@
+{
+  "name": "kleinanzeigen-assistant",
+  "version": "1.0.0",
+  "description": "Human-in-the-Loop Kleinanzeigen automation - finds messages/items and notifies for action",
+  "main": "src/index.js",
+  "scripts": {
+    "poll": "node src/index.js poll",
+    "search": "node src/index.js search",
+    "searches": "node src/index.js searches"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+[
+  {
+    "query": "MacBook M1",
+    "active": true,
+    "lastChecked": null,
+    "minPrice": 500,
+    "maxPrice": 800
+  },
+  {
+    "query": "Herman Miller Aeron",
+    "active": true,
+    "lastChecked": null,
+    "minPrice": 300,
+    "maxPrice": 600
+  },
+  {
+    "query": "Sony A7 III",
+    "active": false,
+    "lastChecked": null
+  }
+]
