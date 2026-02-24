@@ -11,7 +11,9 @@ function detectLanguage(text) {
     const englishWords = [
         'the', 'is', 'and', 'to', 'for', 'of', 'you', 'me', 'what', 'how',
         'please', 'thank', 'price', 'sell', 'buy', 'would', 'like', 'have',
-        'be', 'still', 'yes', 'no', 'hi', 'hello', 'good', 'day'
+        'be', 'still', 'yes', 'no', 'hi', 'hello', 'good', 'day',
+        'am', 'are', 'was', 'were', 'been', 'can', 'will', 'just', 'get',
+        'interested', 'available', 'pick', 'come', 'when', 'where', 'your'
     ];
     
     const lowerText = text.toLowerCase();

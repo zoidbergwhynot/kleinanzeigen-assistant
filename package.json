@@ -1,19 +1,35 @@
 {
   "name": "kleinanzeigen-assistant",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Human-in-the-Loop Kleinanzeigen automation - finds messages/items and notifies for action",
   "main": "src/index.js",
   "scripts": {
     "poll": "node src/index.js poll",
     "search": "node src/index.js search",
-    "searches": "node src/index.js searches"
+    "searches": "node src/index.js searches",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "dotenv": "^16.3.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/index.js"
+    ]
   }
 }

@@ -6,6 +6,7 @@ const { extractConversations, extractConversationContext } = require('./parsers/
 const { extractFirstResult, extractAdDetails } = require('./parsers/ads');
 const { notifyAgent } = require('./notifier');
 const { detectLanguage } = require('./utils/language');
+const { RateLimiter } = require('./utils/rate-limiter');
 
 process.on('unhandledRejection', (reason, p) => {
     console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -16,9 +17,27 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
+/**
+ * Build search URL with optional price filters
+ */
+function buildSearchUrl(searchTerm, minPrice, maxPrice) {
+    let url = `${CONFIG.baseUrl}/s-suchanfrage.html?keywords=${encodeURIComponent(searchTerm)}`;
+    
+    if (minPrice !== undefined && minPrice !== null) {
+        url += `&minPrice=${encodeURIComponent(minPrice)}`;
+    }
+    
+    if (maxPrice !== undefined && maxPrice !== null) {
+        url += `&maxPrice=${encodeURIComponent(maxPrice)}`;
+    }
+    
+    return url;
+}
+
 class KleinanzeigenAssistant {
     constructor() {
         this.browser = new BrowserManager();
+        this.rateLimiter = new RateLimiter();
     }
 
     async pollMessages() {
@@ -26,7 +45,8 @@ class KleinanzeigenAssistant {
         if (!this.browser.isConnected()) return;
         
         try {
-            await this.browser.page.goto(`${CONFIG.baseUrl}/m-nachrichten.html`, { waitUntil: 'networkidle2' });
+            // Use safe navigation
+            await this.browser.safeNavigate(`${CONFIG.baseUrl}/m-nachrichten.html`);
             
             if (this.browser.page.url().includes('login')) {
                 console.log('⚠️ Session lost.');
@@ -37,18 +57,24 @@ class KleinanzeigenAssistant {
             
             console.log(`📬 Found ${conversations.length} unread conversation(s)`);
             
+            // Process max 5 conversations
             for (const conv of conversations.slice(0, 5)) {
                 if (!this.browser.isConnected()) break;
+                if (this.browser.botDetected) {
+                    console.log('🛑 Stopping - bot detected');
+                    break;
+                }
+                
                 console.log(`👤 Processing: ${conv.userName}`);
                 
                 try {
                     if (conv.href) {
-                        await this.browser.page.goto(conv.href, { waitUntil: 'networkidle2' });
+                        await this.browser.safeNavigate(conv.href);
                     } else {
                         continue;
                     }
                     
-                    await sleep(2000);
+                    await this.rateLimiter.humanDelay(1500, 3000);
                     
                     const contextData = await extractConversationContext(this.browser.page);
                     
@@ -76,9 +102,10 @@ class KleinanzeigenAssistant {
                     
                 } catch (convErr) {
                     console.error(`❌ Error processing ${conv.userName}:`, convErr.message);
+                    // Continue with next conversation
                 }
                 
-                await sleep(1500);
+                await this.rateLimiter.humanDelay(1000, 2500);
             }
             
         } catch (err) {
@@ -88,15 +115,15 @@ class KleinanzeigenAssistant {
 
     async searchAndInquire(searchTerm, minPrice, maxPrice) {
         console.log(`🔍 Searching for: "${searchTerm}"`);
-        if (minPrice || maxPrice) {
-            console.log(`   Price range: ${minPrice || 'any'} - ${maxPrice || 'any'}`);
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            console.log(`   Price range: ${minPrice ?? 'any'} - ${maxPrice ?? 'any'}`);
         }
         if (!this.browser.isConnected()) return;
 
         try {
-            let searchUrl = `${CONFIG.baseUrl}/s-suchanfrage.html?keywords=${encodeURIComponent(searchTerm)}`;
+            const searchUrl = buildSearchUrl(searchTerm, minPrice, maxPrice);
             
-            await this.browser.page.goto(searchUrl, { waitUntil: 'networkidle2' });
+            await this.browser.safeNavigate(searchUrl);
             
             await this.browser.page.waitForSelector('[class*="aditem"], article', { timeout: 10000 }).catch(() => null);
             
@@ -109,8 +136,8 @@ class KleinanzeigenAssistant {
             
             console.log(`📦 Found: "${firstResult.title}" - ${firstResult.price}`);
             
-            await this.browser.page.goto(firstResult.link, { waitUntil: 'networkidle2' });
-            await sleep(2000);
+            await this.browser.safeNavigate(firstResult.link);
+            await this.rateLimiter.humanDelay(1500, 3000);
             
             const adContext = await extractAdDetails(this.browser.page);
             
@@ -142,8 +169,13 @@ class KleinanzeigenAssistant {
             console.log(`📋 Running ${activeSearches.length} saved searches...`);
             
             for (const search of activeSearches) {
+                if (this.browser.botDetected) {
+                    console.log('🛑 Stopping searches - bot detected');
+                    break;
+                }
+                
                 await this.searchAndInquire(search.query, search.minPrice, search.maxPrice);
-                await sleep(2000);
+                await this.rateLimiter.humanDelay(2000, 4000);
             }
         } catch (e) {
             console.error('Error reading saved searches:', e.message);
@@ -207,6 +239,12 @@ Environment:
   KLEINANZEIGEN_PASSWORD Your login password
   HEADLESS              Set to 'false' to show browser (default: true)
   PROFILE               Profile to use: main, human-sim, fresh (default: main)
+
+Anti-Bot Features:
+  - Session-first: Checks existing session before hitting login
+  - Rate limiting: Randomized delays between requests
+  - Backoff: Exponential backoff on failures
+  - Bot detection: Stops on 403/429/challenge responses
 `);
         }
         
@@ -222,4 +260,4 @@ if (require.main === module) {
     main();
 }
 
-module.exports = { KleinanzeigenAssistant };
+module.exports = { KleinanzeigenAssistant, buildSearchUrl };
