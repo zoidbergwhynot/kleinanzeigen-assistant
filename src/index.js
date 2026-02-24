@@ -212,15 +212,13 @@ async function main() {
                     console.error('❌ Usage: node src/index.js search "<search term>"');
                     process.exit(1);
                 }
-                if (await assistant.browser.login()) {
-                    await assistant.searchAndInquire(searchTerm);
-                }
+                // Public search doesn't require login
+                await assistant.searchAndInquire(searchTerm);
                 break;
 
             case 'searches':
-                if (await assistant.browser.login()) {
-                    await assistant.runSavedSearches();
-                }
+                // Public searches don't require login
+                await assistant.runSavedSearches();
                 break;
                 
             default:

@@ -87,7 +87,7 @@ class BrowserManager {
         
         try {
             const response = await this.page.goto(checkUrl, { 
-                waitUntil: 'networkidle2',
+                waitUntil: 'domcontentloaded',
                 timeout: 15000 
             });
             
@@ -167,7 +167,7 @@ class BrowserManager {
         try {
             // Navigate to login page (HIGH RISK)
             const response = await this.page.goto(`${CONFIG.baseUrl}/m-einloggen.html`, { 
-                waitUntil: 'networkidle2' 
+                waitUntil: 'domcontentloaded'
             });
             
             // Check for bot detection on login page
@@ -206,7 +206,7 @@ class BrowserManager {
             await this.page.click('#login-submit');
             
             // Wait for navigation
-            await this.page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
+            await this.page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30000 });
             
             // Check result
             const finalUrl = this.page.url();
@@ -254,7 +254,7 @@ class BrowserManager {
         
         await this.rateLimiter.waitForNext();
         
-        const response = await this.page.goto(url, { waitUntil: 'networkidle2' });
+        const response = await this.page.goto(url, { waitUntil: 'domcontentloaded' });
         
         const detection = isBotDetectionResponse(response);
         if (detection.detected) {
